@@ -1,0 +1,122 @@
+import type { ProblemContent } from "./types";
+
+export const distributedMessageQueue: ProblemContent = {
+  requirements: {
+    functional: [
+      "Producers publish messages to named topics",
+      "Consumers read messages and track their own progress (offset)",
+      "Support multiple independent consumer groups reading the same topic",
+      "Retain messages durably for a configurable retention period",
+    ],
+    nonFunctional: [
+      "High sustained throughput for both writes and reads",
+      "Horizontally scalable by adding more broker nodes",
+      "Durable — an acknowledged write must survive a broker failure",
+      "Ordering guaranteed within a partition, tolerant of broker failure via replication",
+    ],
+  },
+  diagramNodes: [
+    { id: "producer", label: "Producer", x: 6, y: 50, kind: "server" },
+    { id: "broker1", label: "Broker 1 (Partition 0 leader)", x: 32, y: 15, kind: "server" },
+    { id: "broker2", label: "Broker 2 (Partition 1 leader)", x: 32, y: 50, kind: "server" },
+    { id: "broker3", label: "Broker 3 (Partition 2 leader)", x: 32, y: 85, kind: "server" },
+    { id: "coord", label: "Coordination (KRaft/ZooKeeper)", x: 60, y: 50, kind: "storage" },
+    { id: "consumer", label: "Consumer Group", x: 90, y: 50, kind: "client" },
+  ],
+  diagramEdges: [
+    { id: "e1", from: "producer", to: "broker1" },
+    { id: "e2", from: "producer", to: "broker2" },
+    { id: "e3", from: "producer", to: "broker3" },
+    { id: "e4", from: "broker1", to: "coord" },
+    { id: "e5", from: "broker2", to: "coord" },
+    { id: "e6", from: "broker3", to: "coord" },
+    { id: "e7", from: "coord", to: "consumer" },
+  ],
+  solutionSteps: [
+    {
+      title: "Producers partition messages by key",
+      description:
+        "A producer hashes each message's key to consistently route it to one specific partition, keeping messages for the same key (e.g. one user's events) in order.",
+      revealNodeIds: ["producer", "broker1", "broker2", "broker3"],
+      revealEdgeIds: ["e1", "e2", "e3"],
+    },
+    {
+      title: "Each partition has a leader broker and replicas",
+      description:
+        "Every partition is hosted on a leader broker, replicated to follower brokers. A write is only acknowledged once the in-sync replica set has durably stored it.",
+      revealNodeIds: [],
+      revealEdgeIds: [],
+    },
+    {
+      title: "A coordination layer tracks cluster metadata",
+      description:
+        "A Raft-based coordination service (modern Kafka's KRaft, or historically ZooKeeper) tracks which broker leads which partition and detects broker failures.",
+      revealNodeIds: ["coord"],
+      revealEdgeIds: ["e4", "e5", "e6"],
+    },
+    {
+      title: "Consumer groups split partitions and track offsets",
+      description:
+        "Each partition is owned by exactly one consumer within a group at a time. Every consumer commits its own offset, so it can resume exactly where it left off after a restart.",
+      revealNodeIds: ["consumer"],
+      revealEdgeIds: ["e7"],
+    },
+    {
+      title: "Broker failure triggers automatic leader re-election",
+      description:
+        "If a partition's leader broker fails, the coordination layer promotes one of its in-sync replicas to be the new leader — producers and consumers simply reconnect to the new leader.",
+      revealNodeIds: [],
+      revealEdgeIds: [],
+    },
+  ],
+  capacity: {
+    inputs: [
+      { key: "messagesPerSec", label: "Messages per second", min: 1_000, max: 10_000_000, step: 1_000, default: 500_000, unit: "" },
+      { key: "avgMessageKB", label: "Avg message size", min: 0.5, max: 10, step: 0.5, default: 1, unit: "KB" },
+      { key: "retentionDays", label: "Retention period", min: 1, max: 14, step: 1, default: 7, unit: "days" },
+    ],
+    compute: (v) => {
+      const throughputMBps = (v.messagesPerSec * v.avgMessageKB) / 1000;
+      const storagePerDayGB = (v.messagesPerSec * 86_400 * v.avgMessageKB) / 1e6;
+      const totalStorageGB = storagePerDayGB * v.retentionDays * 3; // replication factor 3
+      return [
+        { label: "Ingest throughput", value: `${throughputMBps.toFixed(0)} MB/s` },
+        { label: "Storage / day (1 replica)", value: `${storagePerDayGB.toFixed(0)} GB` },
+        { label: "Total storage (3x replicated)", value: `${(totalStorageGB / 1000).toFixed(1)} TB` },
+      ];
+    },
+    chartData: (v) => {
+      const throughputMBps = (v.messagesPerSec * v.avgMessageKB) / 1000;
+      const storagePerDayGB = (v.messagesPerSec * 86_400 * v.avgMessageKB) / 1e6;
+      return [
+        { name: "Throughput (MB/s)", value: Math.round(throughputMBps) },
+        { name: "Storage/day (GB)", value: Math.round(storagePerDayGB) },
+      ];
+    },
+    chartUnit: "",
+  },
+  keyDecisions: [
+    {
+      decision: "Partition topics for horizontal scalability",
+      why: "A single append-only log would cap throughput at one machine's disk I/O; partitioning lets writes and reads scale by adding more brokers.",
+    },
+    {
+      decision: "Leader + in-sync replica set per partition, not full synchronous replication to every replica",
+      why: "Requiring every replica to acknowledge would mean the slowest node dictates latency; ISR-based acknowledgment balances durability with acceptable write latency.",
+    },
+    {
+      decision: "A separate Raft-based coordination layer for cluster metadata",
+      why: "Deciding which broker leads which partition, and detecting/recovering from broker failure, itself requires a consistent, agreed-upon source of truth — hence a dedicated consensus layer.",
+    },
+  ],
+  commonMistakes: [
+    "Designing a single, unpartitioned log that caps throughput at one machine",
+    "Assuming the system guarantees global message ordering across all partitions",
+    "Not discussing what happens when a partition's leader broker fails",
+    "Ignoring consumer group rebalancing behavior when consumers join or leave",
+  ],
+  companyNote: {
+    company: "Apache Kafka",
+    note: "This design is essentially Kafka's own architecture, originally built at LinkedIn to handle the exact combination of requirements here: partitioned logs for scale, replication with ISR for durability, and a Raft-based coordination layer (KRaft, replacing the original ZooKeeper dependency) for cluster metadata.",
+  },
+};

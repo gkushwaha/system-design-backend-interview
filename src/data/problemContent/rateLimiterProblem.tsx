@@ -1,0 +1,119 @@
+import type { ProblemContent } from "./types";
+
+export const rateLimiterProblem: ProblemContent = {
+  requirements: {
+    functional: [
+      "Limit the number of requests a client (per user, IP, or API key) can make in a given time window",
+      "Return 429 Too Many Requests with a Retry-After header once the limit is exceeded",
+      "Support different limits for different endpoints or subscription tiers",
+      "Allow rule configuration to change without redeploying services",
+    ],
+    nonFunctional: [
+      "Must add minimal latency to every request (it's on the hot path)",
+      "Must enforce a single global limit consistently across many gateway/API server instances",
+      "High availability — the limiter itself must not become a single point of failure",
+      "Accurate enough to prevent abuse without false-positive throttling of legitimate bursts",
+    ],
+  },
+  diagramNodes: [
+    { id: "client", label: "Client", x: 8, y: 50, kind: "client" },
+    { id: "gateway", label: "API Gateway", x: 35, y: 50, kind: "server" },
+    { id: "redis", label: "Redis Counters", x: 35, y: 12, kind: "cache" },
+    { id: "backend", label: "Backend Service", x: 65, y: 50, kind: "server" },
+    { id: "config", label: "Rule Config Store", x: 90, y: 50, kind: "storage" },
+  ],
+  diagramEdges: [
+    { id: "e1", from: "client", to: "gateway" },
+    { id: "e2", from: "gateway", to: "redis" },
+    { id: "e3", from: "gateway", to: "backend" },
+    { id: "e4", from: "gateway", to: "config" },
+  ],
+  solutionSteps: [
+    {
+      title: "Every request passes through the gateway first",
+      description:
+        "Rather than each backend service implementing its own limiting, a shared API gateway intercepts every incoming request before it reaches any backend.",
+      revealNodeIds: ["client", "gateway"],
+      revealEdgeIds: ["e1"],
+    },
+    {
+      title: "The gateway checks a centralized counter",
+      description:
+        "The gateway atomically checks and increments a per-client counter in Redis (via a Lua script to avoid race conditions), using a token bucket or sliding window algorithm.",
+      revealNodeIds: ["redis"],
+      revealEdgeIds: ["e2"],
+    },
+    {
+      title: "Allowed requests are forwarded to the backend",
+      description:
+        "If the client is under their limit, the request is forwarded normally. If not, the gateway returns 429 immediately — the backend service never even sees the rejected request.",
+      revealNodeIds: ["backend"],
+      revealEdgeIds: ["e3"],
+    },
+    {
+      title: "Rules are configurable without a redeploy",
+      description:
+        "Per-endpoint and per-tier limits live in a separate config store the gateway reads (and caches), so product/ops teams can adjust limits without shipping new code.",
+      revealNodeIds: ["config"],
+      revealEdgeIds: ["e4"],
+    },
+    {
+      title: "Why Redis, and why centralized",
+      description:
+        "Because the gateway itself is horizontally scaled across many instances, the counters must live in a shared store — otherwise each instance would enforce its own independent limit, letting clients multiply their effective quota by the instance count.",
+      revealNodeIds: [],
+      revealEdgeIds: [],
+    },
+  ],
+  capacity: {
+    inputs: [
+      { key: "activeClients", label: "Active rate-limited clients", min: 1_000, max: 10_000_000, step: 1_000, default: 500_000, unit: "" },
+      { key: "avgReqPerMin", label: "Avg requests / client / min", min: 1, max: 300, step: 1, default: 30, unit: "/min" },
+    ],
+    compute: (v) => {
+      const totalReqPerSec = (v.activeClients * v.avgReqPerMin) / 60;
+      const redisOpsPerSec = totalReqPerSec * 2; // check + increment
+      const memoryMB = (v.activeClients * 100) / 1e6; // ~100 bytes per counter key
+      return [
+        { label: "Total req/sec", value: totalReqPerSec.toFixed(0) },
+        { label: "Redis ops/sec", value: redisOpsPerSec.toFixed(0) },
+        { label: "Counter memory", value: `${memoryMB.toFixed(1)} MB` },
+      ];
+    },
+    chartData: (v) => {
+      const totalReqPerSec = (v.activeClients * v.avgReqPerMin) / 60;
+      const redisOpsPerSec = totalReqPerSec * 2;
+      const memoryMB = (v.activeClients * 100) / 1e6;
+      return [
+        { name: "Req/sec", value: Math.round(totalReqPerSec) },
+        { name: "Redis ops/sec", value: Math.round(redisOpsPerSec) },
+        { name: "Memory (MB)", value: Math.round(memoryMB) },
+      ];
+    },
+    chartUnit: "",
+  },
+  keyDecisions: [
+    {
+      decision: "Token bucket algorithm via an atomic Redis Lua script",
+      why: "Token bucket allows reasonable bursts while capping sustained rate. A Lua script makes the check-and-decrement atomic, avoiding a race condition where two concurrent requests both read the same 'tokens remaining' value.",
+    },
+    {
+      decision: "Centralize counters in Redis rather than per-instance memory",
+      why: "The gateway is horizontally scaled; without a shared store, a client could get N times the intended limit by hitting N different gateway instances.",
+    },
+    {
+      decision: "Fail-open if Redis becomes unavailable",
+      why: "For most products, briefly allowing unlimited traffic during a Redis outage is preferable to taking down the entire API — availability of the core product matters more than perfect enforcement during a rare failure.",
+    },
+  ],
+  commonMistakes: [
+    "Implementing check-then-increment as two separate non-atomic operations, causing a race condition",
+    "Using per-server in-memory counters in a horizontally scaled deployment",
+    "Not setting a TTL on counter keys, causing unbounded memory growth over time",
+    "Not deciding explicitly whether the system should fail open or fail closed if the limiter store goes down",
+  ],
+  companyNote: {
+    company: "Stripe",
+    note: "Stripe enforces per-API-key rate limits with a token bucket implementation, returning a Retry-After header and exposing remaining quota via response headers so well-behaved clients can back off proactively instead of hitting 429s blindly.",
+  },
+};

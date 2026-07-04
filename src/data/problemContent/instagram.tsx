@@ -1,0 +1,121 @@
+import type { ProblemContent } from "./types";
+
+export const instagram: ProblemContent = {
+  requirements: {
+    functional: [
+      "Upload a photo or video with a caption",
+      "View a feed of posts from followed users",
+      "Like and comment on posts",
+      "Follow / unfollow other users",
+    ],
+    nonFunctional: [
+      "Feed loads must feel instant, even with huge follower graphs",
+      "Media storage and delivery must scale to petabytes with low-latency global access",
+      "High write throughput for new posts and social graph changes",
+      "Media delivery must never bottleneck through application servers",
+    ],
+  },
+  diagramNodes: [
+    { id: "client", label: "Client App", x: 6, y: 50, kind: "client" },
+    { id: "api", label: "API Service", x: 30, y: 25, kind: "server" },
+    { id: "media", label: "Object Storage (S3)", x: 30, y: 80, kind: "storage" },
+    { id: "cdn", label: "CDN", x: 58, y: 80, kind: "external" },
+    { id: "feed", label: "Feed Service", x: 58, y: 25, kind: "server" },
+    { id: "timeline", label: "Timeline Cache", x: 84, y: 25, kind: "cache" },
+    { id: "graph", label: "Follow Graph + Post Metadata DB", x: 84, y: 80, kind: "db" },
+  ],
+  diagramEdges: [
+    { id: "e1", from: "client", to: "api" },
+    { id: "e2", from: "api", to: "media" },
+    { id: "e3", from: "media", to: "cdn" },
+    { id: "e4", from: "api", to: "feed" },
+    { id: "e5", from: "feed", to: "timeline" },
+    { id: "e6", from: "feed", to: "graph" },
+  ],
+  solutionSteps: [
+    {
+      title: "Upload stores the original media in object storage",
+      description:
+        "The API service uploads the original photo/video to object storage (S3), and generates multiple resolutions (thumbnail, feed-size, full) at upload time rather than on every view.",
+      revealNodeIds: ["client", "api", "media"],
+      revealEdgeIds: ["e1", "e2"],
+    },
+    {
+      title: "A CDN serves all media, never the app servers",
+      description:
+        "Every image/video URL points at a CDN in front of object storage — app servers only ever handle metadata (captions, likes, follow graph), never media bytes themselves.",
+      revealNodeIds: ["cdn"],
+      revealEdgeIds: ["e3"],
+    },
+    {
+      title: "Post metadata is saved and fanned out to followers",
+      description:
+        "The feed service saves post metadata (author, caption, media URLs, timestamp) and — using the same hybrid fan-out approach as a social feed — pushes the new post's ID into most followers' precomputed timelines.",
+      revealNodeIds: ["feed", "graph"],
+      revealEdgeIds: ["e4", "e6"],
+    },
+    {
+      title: "Followers' timelines are updated in a cache",
+      description:
+        "For accounts with a normal follower count, the post ID is pushed directly into each follower's timeline cache. Celebrity accounts are merged in at read time instead, avoiding a massive fan-out write storm.",
+      revealNodeIds: ["timeline"],
+      revealEdgeIds: ["e5"],
+    },
+    {
+      title: "Viewing the feed is fast and media-server-free",
+      description:
+        "Loading the feed reads post IDs from the timeline cache, fetches metadata in bulk, and renders media directly from CDN URLs — the app's own servers never touch the actual image bytes.",
+      revealNodeIds: [],
+      revealEdgeIds: [],
+    },
+  ],
+  capacity: {
+    inputs: [
+      { key: "dau", label: "Daily active users", min: 1_000_000, max: 500_000_000, step: 1_000_000, default: 150_000_000, unit: "" },
+      { key: "postsPerUserPerDay", label: "Posts per user per day", min: 0.05, max: 2, step: 0.05, default: 0.2, unit: "" },
+      { key: "avgMediaMB", label: "Avg media size", min: 0.5, max: 20, step: 0.5, default: 3, unit: "MB" },
+    ],
+    compute: (v) => {
+      const postsPerDay = v.dau * v.postsPerUserPerDay;
+      const storagePerDayGB = (postsPerDay * v.avgMediaMB) / 1000;
+      return [
+        { label: "Posts / day", value: (postsPerDay / 1e6).toFixed(1) + "M" },
+        { label: "New media storage / day", value: `${storagePerDayGB.toFixed(0)} GB` },
+        { label: "Storage / year", value: `${((storagePerDayGB * 365) / 1000).toFixed(1)} TB` },
+      ];
+    },
+    chartData: (v) => {
+      const postsPerDay = v.dau * v.postsPerUserPerDay;
+      const storagePerDayGB = (postsPerDay * v.avgMediaMB) / 1000;
+      return [
+        { name: "Posts/day (thousands)", value: Math.round(postsPerDay / 1000) },
+        { name: "Storage/day (GB)", value: Math.round(storagePerDayGB) },
+      ];
+    },
+    chartUnit: "",
+  },
+  keyDecisions: [
+    {
+      decision: "Media is served exclusively through a CDN, never app servers",
+      why: "Images and video are large, immutable once uploaded, and read far more often than written — a textbook CDN caching case that would otherwise overwhelm application servers.",
+    },
+    {
+      decision: "Pre-generate multiple resolutions at upload time",
+      why: "Resizing on every view would waste CPU repeatedly for the same result; generating thumbnail/feed/full sizes once at upload keeps read-time serving cheap and fast.",
+    },
+    {
+      decision: "Same hybrid fan-out model as a social feed (push for normal users, pull for celebrities)",
+      why: "Instagram has the identical celebrity fan-out problem as Twitter — pushing a post to tens of millions of followers instantly isn't feasible, so celebrity posts are merged at read time instead.",
+    },
+  ],
+  commonMistakes: [
+    "Serving images directly from application servers instead of object storage + CDN",
+    "Resizing images on-the-fly for every view instead of pre-generating standard sizes",
+    "Forgetting the celebrity fan-out problem when designing the feed",
+    "Underestimating storage growth — media is orders of magnitude larger than the text-based data in a comparable text feed",
+  ],
+  companyNote: {
+    company: "Instagram",
+    note: "Instagram stores media in object storage behind a CDN, pre-generates multiple image resolutions at upload time, and uses a hybrid push/pull fan-out model for feed generation nearly identical in spirit to Twitter's approach — media is simply the biggest added dimension.",
+  },
+};
