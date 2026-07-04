@@ -5,10 +5,32 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Navbar } from "@/components/layout/Navbar";
 import { useStreak } from "@/hooks/useStreak";
 
+// Tracks whether the app has ever rendered real route content, across this
+// component's whole lifetime (it never unmounts between in-app navigations).
+let hasMountedOnce = false;
+
 function PageTransition() {
   const location = useLocation();
+  // AnimatePresence's `initial={false}` was meant to skip the fade on the very
+  // first paint, but it raced the lazy-loaded route chunk (React only mounts
+  // this component once the chunk resolves) and could leave the page stuck at
+  // a partial or zero opacity forever on a real (non-instant) network — a
+  // serious production bug where content silently never became visible. Doing
+  // the "is this the first paint" check ourselves, outside framer-motion,
+  // sidesteps that race entirely: the very first route always renders with no
+  // animation wrapper, guaranteeing it's visible immediately.
+  const [skipInitialAnimation] = useState(() => {
+    const isFirst = !hasMountedOnce;
+    hasMountedOnce = true;
+    return isFirst;
+  });
+
+  if (skipInitialAnimation) {
+    return <Outlet />;
+  }
+
   return (
-    <AnimatePresence mode="sync" initial={false}>
+    <AnimatePresence mode="sync">
       <motion.div
         key={location.pathname}
         initial={{ opacity: 0 }}

@@ -61,3 +61,21 @@ test("REGRESSION BUG-005: no critical or serious axe violations survive an anima
   const bad = results.violations.filter((v) => v.impact === "critical" || v.impact === "serious");
   expect(bad, JSON.stringify(bad, null, 2)).toEqual([]);
 });
+
+test("REGRESSION BUG-006: the very first route render is never stuck at partial/zero opacity", async ({
+  page,
+}) => {
+  // App.tsx's AnimatePresence page-transition fade used `initial={false}` to
+  // skip the fade on first paint, but that raced the lazy-loaded route chunk
+  // and could leave real content invisible (opacity stuck below 1) forever on
+  // a real network — reproduced by loading a lazy route directly, repeatedly,
+  // and checking opacity immediately rather than after it would have settled.
+  for (let i = 0; i < 8; i++) {
+    await page.goto(`#/topics/cdn?_r=${i}`);
+    const opacity = await page.evaluate(() => {
+      const el = document.querySelector("main > div");
+      return el ? getComputedStyle(el).opacity : "1";
+    });
+    expect(opacity).toBe("1");
+  }
+});
