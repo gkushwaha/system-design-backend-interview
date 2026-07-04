@@ -1,181 +1,102 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Flame, Sparkles, Zap } from "lucide-react";
+import { BookOpen, Clock, Map as MapIcon, Swords } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Badge, DifficultyBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { ProgressRing } from "@/components/ui/ProgressRing";
-import { useXP } from "@/hooks/useXP";
-import { useProgress } from "@/hooks/useProgress";
-import { useProgressStore } from "@/store/useProgressStore";
-import { topicsById } from "@/data/topics";
+import { MOST_ASKED_COUNT, ADVANCED_COUNT, EXPERT_COUNT } from "@/data/topics";
 import { problems } from "@/data/problems";
 
-function dayOfYearIndex(length: number): number {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const diff = now.getTime() - start.getTime();
-  const dayOfYear = Math.floor(diff / 86_400_000);
-  return dayOfYear % length;
-}
+const STEPS = [
+  {
+    title: "Skill Tree",
+    body: "Start with the 15 “Most Asked” topics. Each one walks through the concept, how it works, its tradeoffs, and gives you an interview-ready spoken answer to practice.",
+  },
+  {
+    title: "System Design Problems",
+    body: "Once the fundamentals feel solid, work through full worked examples — “Design a URL shortener,” “Design Twitter's feed” — showing how to structure a real interview answer end to end.",
+  },
+  {
+    title: "Interview Simulation",
+    body: "Practice explaining a concept out loud, under time pressure, the way a real interview actually feels.",
+  },
+  {
+    title: "Quick Reference",
+    body: "Keep this open for a fast cheat-sheet: database comparisons, latency numbers, CAP theorem systems, HTTP status codes.",
+  },
+];
+
+const QUICK_LINKS = [
+  {
+    to: "/map",
+    icon: MapIcon,
+    label: "Skill Tree",
+    detail: `${MOST_ASKED_COUNT + ADVANCED_COUNT + EXPERT_COUNT} topics across Most Asked, Advanced, and Expert tiers`,
+  },
+  {
+    to: "/problems",
+    icon: Swords,
+    label: "System Design Problems",
+    detail: `${problems.length} real interview questions, worked end to end`,
+  },
+  {
+    to: "/interview",
+    icon: Clock,
+    label: "Interview Simulation",
+    detail: "Practice answering out loud, under time pressure",
+  },
+  {
+    to: "/reference",
+    icon: BookOpen,
+    label: "Quick Reference",
+    detail: "Comparison tables, latency numbers, and cheat-sheets",
+  },
+];
 
 export function Home() {
-  const { xp, level, lastGain, nextThreshold, progressToNext } = useXP();
-  const { rings, lastTopicId, recentTopicIds } = useProgress();
-  const streak = useProgressStore((s) => s.streak);
-  const [showGainToast, setShowGainToast] = useState(false);
-
-  useEffect(() => {
-    if (lastGain > 0) {
-      setShowGainToast(true);
-      const t = setTimeout(() => setShowGainToast(false), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [lastGain]);
-
-  const todaysChallenge = problems[dayOfYearIndex(problems.length)];
-  const lastTopic = lastTopicId ? topicsById.get(lastTopicId) : undefined;
-  const recentTopics = recentTopicIds
-    .map((id) => topicsById.get(id))
-    .filter((t): t is NonNullable<typeof t> => Boolean(t));
-
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      {showGainToast && (
-        <motion.div
-          initial={{ opacity: 0, y: -20, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="fixed right-8 top-6 z-50 flex items-center gap-2 rounded-lg border border-primary/40 bg-surface px-4 py-2.5 shadow-lg shadow-primary/10"
-        >
-          <Sparkles size={16} className="text-indigo-300" />
-          <span className="text-sm font-semibold text-text">+{lastGain} XP earned!</span>
-        </motion.div>
-      )}
-
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <h1 className="text-2xl font-semibold text-text">Welcome back</h1>
-        <p className="mt-1 text-sm text-muted">
-          Keep the streak alive — you're on day {streak.count}.
+    <div className="mx-auto max-w-4xl space-y-10">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <h1 className="text-3xl font-semibold text-text">Master system design interviews</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
+          A free, self-contained curriculum covering the concepts, tradeoffs, and real interview
+          questions backend engineers get asked — from load balancers and caching to designing
+          Twitter's feed. No sign-up, no tracking. Just come, study a topic, and move on.
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        <Card className="md:col-span-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs font-medium uppercase tracking-wide text-muted">
-                Current Level
-              </div>
-              <div className="mt-1 text-xl font-semibold text-text">{level}</div>
-            </div>
-            <Badge tone="primary" icon={<Zap size={12} />}>
-              {xp.toLocaleString()} XP
-            </Badge>
-          </div>
-          <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-white/5">
-            <motion.div
-              className="h-full rounded-full bg-primary"
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.round(progressToNext * 100)}%` }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            />
-          </div>
-          <div className="mt-1.5 text-xs text-muted font-mono">
-            {nextThreshold ? `${nextThreshold - xp} XP to next level` : "Max level reached"}
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-warning/15 text-warning">
-              <Flame size={20} />
-            </div>
-            <div>
-              <div className="text-xl font-semibold text-text">{streak.count} days</div>
-              <div className="text-xs text-muted">Current streak</div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
       <Card>
-        <div className="mb-4 text-sm font-semibold text-text">Progress</div>
-        <div className="flex flex-wrap justify-around gap-6">
-          <ProgressRing done={rings.mostAsked.done} total={rings.mostAsked.total} label="Most Asked" color="#ef4444" />
-          <ProgressRing done={rings.advanced.done} total={rings.advanced.total} label="Advanced" color="#f59e0b" />
-          <ProgressRing done={rings.expert.done} total={rings.expert.total} label="Expert" color="#6366f1" />
-        </div>
+        <div className="mb-4 text-sm font-semibold text-text">How to use this</div>
+        <ol className="space-y-4">
+          {STEPS.map((step, i) => (
+            <li key={step.title} className="flex gap-3 text-sm text-muted">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 font-mono text-xs text-indigo-300">
+                {i + 1}
+              </span>
+              <span>
+                <strong className="text-text">{step.title}</strong> — {step.body}
+              </span>
+            </li>
+          ))}
+        </ol>
       </Card>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <Card>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-            Continue where you left off
-          </div>
-          {lastTopic ? (
-            <Link to={`/topics/${lastTopic.slug}`} className="block">
-              <div className="flex items-center justify-between rounded-lg border border-border bg-white/[0.02] p-4 transition-colors hover:border-primary/50">
-                <div>
-                  <DifficultyBadge tier={lastTopic.tier} />
-                  <div className="mt-2 text-sm font-medium text-text">{lastTopic.title}</div>
-                </div>
-                <ArrowRight size={18} className="text-muted" />
-              </div>
-            </Link>
-          ) : (
-            <div className="text-sm text-muted">
-              Nothing yet —{" "}
-              <Link to="/map" className="text-indigo-300 hover:underline">
-                start your first topic
-              </Link>
-              .
-            </div>
-          )}
-        </Card>
-
-        <Card>
-          <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted">
-            Today's Challenge
-            <Badge tone="danger">🔥</Badge>
-          </div>
-          <div className="rounded-lg border border-border bg-white/[0.02] p-4">
-            <DifficultyBadge tier={todaysChallenge.tier} />
-            <div className="mt-2 text-sm font-medium text-text">{todaysChallenge.title}</div>
-            <div className="mt-1 text-xs text-muted">{todaysChallenge.company}</div>
-            <Link to={`/problems/${todaysChallenge.slug}`}>
-              <Button size="sm" className="mt-3">
-                Start challenge
-              </Button>
-            </Link>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        {QUICK_LINKS.map(({ to, icon: Icon, label, detail }) => (
+          <Link key={to} to={to}>
+            <Card className="h-full transition-colors hover:border-primary/50">
+              <Icon className="text-indigo-300" size={22} />
+              <div className="mt-3 text-sm font-semibold text-text">{label}</div>
+              <div className="mt-1 text-xs text-muted">{detail}</div>
+            </Card>
+          </Link>
+        ))}
       </div>
 
-      <Card>
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
-          Recently Visited
-        </div>
-        {recentTopics.length === 0 ? (
-          <div className="text-sm text-muted">No topics visited yet.</div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {recentTopics.map((t) => (
-              <Link key={t.id} to={`/topics/${t.slug}`}>
-                <div className="rounded-lg border border-border bg-white/[0.02] p-3 transition-colors hover:border-primary/50">
-                  <DifficultyBadge tier={t.tier} />
-                  <div className="mt-2 truncate text-sm font-medium text-text">{t.title}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </Card>
+      <div className="flex justify-center">
+        <Link to="/map">
+          <Button size="lg">Start with Most Asked topics</Button>
+        </Link>
+      </div>
     </div>
   );
 }

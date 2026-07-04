@@ -9,13 +9,14 @@ test.describe("critical happy paths", () => {
     });
 
     await page.goto("#/");
-    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
-    // The navbar's "0 XP" is `hidden sm:inline` (absent below the sm breakpoint on
-    // mobile) — scope to <main>, where the home page's own XP badge always renders.
-    await expect(page.getByRole("main").getByText("0 XP", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Junior Engineer").first()).toBeVisible();
-    await expect(page.getByText("Most Asked").first()).toBeVisible();
-    await expect(page.getByText("Today's Challenge")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Master system design interviews/i })).toBeVisible();
+    await expect(page.getByText("How to use this")).toBeVisible();
+    // These labels also appear as sidebar nav links, so scope to <main>.
+    const main = page.getByRole("main");
+    await expect(main.getByRole("link", { name: /Skill Tree/i })).toBeVisible();
+    await expect(main.getByRole("link", { name: /System Design Problems/i })).toBeVisible();
+    await expect(main.getByRole("link", { name: /Interview Simulation/i })).toBeVisible();
+    await expect(main.getByRole("link", { name: /Quick Reference/i })).toBeVisible();
 
     expect(errors, `console/page errors: ${errors.join("; ")}`).toEqual([]);
   });
@@ -43,7 +44,8 @@ test.describe("critical happy paths", () => {
 
     await expect(page.getByText(/Challenge complete!|Completed/)).toBeVisible({ timeout: 3000 });
 
-    await page.goto("#/");
+    // Progress now shows in the sidebar's "Most Asked" counter (Home is a purely
+    // informational landing page and doesn't track progress).
     await expect(page.getByText("1/15").first()).toBeVisible();
   });
 

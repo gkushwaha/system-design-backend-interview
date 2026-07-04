@@ -13,17 +13,18 @@ test.describe("persistence across reload", () => {
     await expect(page.getByText(/Challenge complete!|Completed/)).toBeVisible({ timeout: 3000 });
 
     await page.reload();
-    await page.goto("#/");
+    // Sidebar's "Most Asked" counter reflects persisted progress (Home is a
+    // purely informational landing page and doesn't track progress).
     await expect(page.getByText("1/15").first()).toBeVisible();
   });
 
   test("XP survives a full page reload", async ({ page }) => {
     await page.goto("#/");
-    // Scope to <main>: the navbar's "0 XP" badge is `hidden sm:inline` (deliberately
-    // absent below the sm breakpoint on mobile), but the home page's own XP badge
-    // in the main content always renders regardless of viewport width.
-    await expect(page.getByRole("main").getByText(/XP/).first()).toBeVisible();
+    // The navbar's "X XP" span is `hidden sm:inline` (absent below the sm
+    // breakpoint on mobile) — check attachment rather than visibility so this
+    // works on both the desktop and mobile projects.
+    await expect(page.getByRole("banner").getByText(/XP/).first()).toBeAttached();
     await page.reload();
-    await expect(page.getByRole("main").getByText(/XP/).first()).toBeVisible();
+    await expect(page.getByRole("banner").getByText(/XP/).first()).toBeAttached();
   });
 });

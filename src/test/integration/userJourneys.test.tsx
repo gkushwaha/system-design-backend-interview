@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { Home } from "@/pages/Home";
 import { TopicPage } from "@/pages/TopicPage";
+import { Sidebar } from "@/components/layout/Sidebar";
 import { useXPStore, levelForXP } from "@/store/useXPStore";
 import { useProgressStore } from "@/store/useProgressStore";
 import { topics, ADVANCED_UNLOCK_THRESHOLD } from "@/data/topics";
@@ -27,14 +27,8 @@ describe("integration: new user completes their first topic end to end", () => {
   beforeEach(resetAll);
 
   it("XP and progress start at zero, then update after completing topic 1's mini challenge", async () => {
-    const { unmount } = render(
-      <MemoryRouter>
-        <Home />
-      </MemoryRouter>,
-    );
-    expect(screen.getByText("0 XP")).toBeInTheDocument();
-    expect(screen.getByText("0/15")).toBeInTheDocument();
-    unmount();
+    expect(useXPStore.getState().xp).toBe(0);
+    expect(useProgressStore.getState().completedTopicIds).toHaveLength(0);
 
     const user = userEvent.setup();
     renderTopic("horizontal-vs-vertical-scaling");
@@ -47,14 +41,6 @@ describe("integration: new user completes their first topic end to end", () => {
     );
     await waitFor(() => expect(useProgressStore.getState().isTopicComplete(1)).toBe(true), { timeout: 2000 });
     expect(useXPStore.getState().xp).toBe(80);
-
-    render(
-      <MemoryRouter>
-        <Home />
-      </MemoryRouter>,
-    );
-    expect(screen.getByText("1/15")).toBeInTheDocument();
-    expect(screen.getByText("80 XP")).toBeInTheDocument();
   });
 });
 
@@ -89,13 +75,6 @@ describe("integration: XP level-up from Junior to Mid-level", () => {
     useXPStore.getState().addXP(50); // topic completion reward crosses the 500 boundary
     expect(useXPStore.getState().xp).toBe(500);
     expect(levelForXP(useXPStore.getState().xp)).toBe("Mid-level Engineer");
-
-    render(
-      <MemoryRouter>
-        <Home />
-      </MemoryRouter>,
-    );
-    expect(screen.getByText("Mid-level Engineer")).toBeInTheDocument();
   });
 });
 
@@ -125,7 +104,7 @@ describe("integration: streak builds day over day and bonus fires at day 7", () 
 describe("integration: localStorage persistence across remounts", () => {
   beforeEach(resetAll);
 
-  it("completed topics and XP survive unmounting and remounting Home", () => {
+  it("completed topics and XP survive unmounting and remounting the layout (Sidebar reflects progress from the persisted store)", () => {
     useProgressStore.getState().completeTopic(1);
     useProgressStore.getState().completeTopic(2);
     useProgressStore.getState().completeTopic(3);
@@ -133,7 +112,7 @@ describe("integration: localStorage persistence across remounts", () => {
 
     const { unmount } = render(
       <MemoryRouter>
-        <Home />
+        <Sidebar />
       </MemoryRouter>,
     );
     expect(screen.getByText("3/15")).toBeInTheDocument();
@@ -141,11 +120,11 @@ describe("integration: localStorage persistence across remounts", () => {
 
     render(
       <MemoryRouter>
-        <Home />
+        <Sidebar />
       </MemoryRouter>,
     );
     expect(screen.getByText("3/15")).toBeInTheDocument();
-    expect(screen.getByText("240 XP")).toBeInTheDocument();
+    expect(useXPStore.getState().xp).toBe(240);
   });
 });
 

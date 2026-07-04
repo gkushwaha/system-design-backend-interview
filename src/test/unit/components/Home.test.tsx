@@ -1,9 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { Home } from "@/pages/Home";
-import { useXPStore } from "@/store/useXPStore";
-import { useProgressStore } from "@/store/useProgressStore";
 
 function renderHome() {
   return render(
@@ -13,84 +11,41 @@ function renderHome() {
   );
 }
 
-describe("Home — fresh state", () => {
-  beforeEach(() => {
-    useXPStore.getState().reset();
-    useProgressStore.getState().reset();
-  });
-
-  it("renders 0 XP and Junior Engineer level", () => {
+describe("Home — informational landing page", () => {
+  it("renders the headline and intro copy", () => {
     renderHome();
-    expect(screen.getByText("Junior Engineer")).toBeInTheDocument();
-    expect(screen.getByText("0 XP")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Master system design interviews/i })).toBeInTheDocument();
   });
 
-  it("renders streak count of 0", () => {
+  it("renders the 'How to use this' walkthrough with all four steps", () => {
     renderHome();
-    expect(screen.getByText("0 days")).toBeInTheDocument();
+    expect(screen.getByText("How to use this")).toBeInTheDocument();
+    // Each step name also appears in its own quick-link card below, so these
+    // legitimately match twice — just assert at least one instance renders.
+    expect(screen.getAllByText("Skill Tree").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("System Design Problems").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Interview Simulation").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Quick Reference").length).toBeGreaterThan(0);
   });
 
-  it("Most Asked progress ring shows 0/15", () => {
+  it("renders quick-link cards to all four sections with correct hrefs", () => {
     renderHome();
-    expect(screen.getByText("0/15")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Skill Tree/i })).toHaveAttribute("href", "/map");
+    expect(screen.getByRole("link", { name: /System Design Problems/i })).toHaveAttribute("href", "/problems");
+    expect(screen.getByRole("link", { name: /Interview Simulation/i })).toHaveAttribute("href", "/interview");
+    expect(screen.getByRole("link", { name: /Quick Reference/i })).toHaveAttribute("href", "/reference");
   });
 
-  it("Advanced progress ring shows 0/67", () => {
+  it("renders a call to action linking to the skill tree", () => {
     renderHome();
-    expect(screen.getByText("0/67")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Start with Most Asked topics/i })).toHaveAttribute("href", "/map");
   });
 
-  it("Expert progress ring shows 0/31", () => {
+  it("does not render any progress-tracking UI (XP, streak, rings)", () => {
     renderHome();
-    expect(screen.getByText("0/31")).toBeInTheDocument();
-  });
-
-  it("shows the 'nothing yet' prompt when no topic has been visited", () => {
-    renderHome();
-    expect(screen.getByText(/Nothing yet/)).toBeInTheDocument();
-  });
-
-  it("shows 'No topics visited yet' in Recently Visited when empty", () => {
-    renderHome();
-    expect(screen.getByText("No topics visited yet.")).toBeInTheDocument();
-  });
-
-  it("renders a Today's Challenge section with a real problem title", () => {
-    renderHome();
-    expect(screen.getByText("Today's Challenge")).toBeInTheDocument();
-    expect(screen.getByText("Start challenge")).toBeInTheDocument();
-  });
-});
-
-describe("Home — after visiting and completing topics", () => {
-  beforeEach(() => {
-    useXPStore.getState().reset();
-    useProgressStore.getState().reset();
-  });
-
-  it("shows the last visited topic in 'Continue where you left off'", () => {
-    useProgressStore.getState().visitTopic(1);
-    renderHome();
-    // Visiting topic 1 populates both "Continue where you left off" and "Recently
-    // Visited" with the same topic, so it legitimately appears twice on Home.
-    expect(screen.getAllByText("Horizontal vs vertical scaling").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("recently visited shows at most 5 items", () => {
-    [1, 2, 3, 4, 5, 6].forEach((id) => useProgressStore.getState().visitTopic(id));
-    renderHome();
-    expect(useProgressStore.getState().recentTopicIds).toHaveLength(5);
-  });
-
-  it("progress ring reflects a completed topic", () => {
-    useProgressStore.getState().completeTopic(1);
-    renderHome();
-    expect(screen.getByText("1/15")).toBeInTheDocument();
-  });
-
-  it("XP display reflects the store's current XP", () => {
-    useXPStore.getState().addXP(180);
-    renderHome();
-    expect(screen.getByText("180 XP")).toBeInTheDocument();
+    expect(screen.queryByText(/XP/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/streak/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("Today's Challenge")).not.toBeInTheDocument();
+    expect(screen.queryByText("Continue where you left off")).not.toBeInTheDocument();
   });
 });
