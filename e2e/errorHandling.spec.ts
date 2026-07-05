@@ -20,11 +20,10 @@ test.describe("error handling", () => {
     expect(errors).toEqual([]);
   });
 
-  test("direct deep-link to a tier-locked Expert topic still renders (locking is a discovery gate in the sidebar/skill tree, not page-level access control), without crashing", async ({ page }) => {
+  test("direct deep-link to an Expert topic renders without crashing", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (err) => errors.push(err.message));
 
-    // Expert topic, locked in the sidebar/skill tree by default (requires 20 Advanced complete).
     await page.goto("#/topics/crdts");
     await expect(page.getByRole("heading", { name: "CRDTs" })).toBeVisible();
     expect(errors).toEqual([]);

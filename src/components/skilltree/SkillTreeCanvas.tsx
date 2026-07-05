@@ -1,7 +1,7 @@
 import { useRef, useState, type WheelEvent, type MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, ChevronsDown, Lock, Minus, Plus, RotateCcw } from "lucide-react";
+import { CheckCircle2, ChevronsDown, Minus, Plus, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { topics, type Topic } from "@/data/topics";
 import { useProgress } from "@/hooks/useProgress";
@@ -11,13 +11,11 @@ const MAX_ZOOM = 1.4;
 
 function TopicNode({
   topic,
-  locked,
   done,
   current,
   size = "md",
 }: {
   topic: Topic;
-  locked: boolean;
   done: boolean;
   current: boolean;
   size?: "lg" | "md";
@@ -37,26 +35,17 @@ function TopicNode({
         className={cn(
           dims,
           "flex items-center justify-center rounded-full border-2 font-mono font-semibold transition-colors",
-          locked && "border-border bg-white/[0.02] text-muted/50",
-          !locked && done && "border-success/70 bg-success/10 text-success shadow-[0_0_14px_rgba(34,197,94,0.25)]",
-          !locked && !done && "border-primary/50 bg-primary/10 text-indigo-300",
+          done && "border-success/70 bg-success/10 text-success shadow-[0_0_14px_rgba(34,197,94,0.25)]",
+          !done && "border-primary/50 bg-primary/10 text-indigo-300",
         )}
         style={{ fontSize: iconSize }}
       >
-        {locked ? <Lock size={iconSize - 2} /> : done ? <CheckCircle2 size={iconSize} /> : topic.id}
+        {done ? <CheckCircle2 size={iconSize} /> : topic.id}
       </motion.div>
-      <span
-        className={cn(
-          "line-clamp-2 text-center text-[10px] leading-tight",
-          locked ? "text-muted/40" : "text-muted",
-        )}
-      >
-        {topic.title}
-      </span>
+      <span className="line-clamp-2 text-center text-[10px] leading-tight text-muted">{topic.title}</span>
     </div>
   );
 
-  if (locked) return inner;
   return (
     <Link to={`/topics/${topic.slug}`} className="transition-transform hover:scale-105">
       {inner}
@@ -64,31 +53,20 @@ function TopicNode({
   );
 }
 
-function GateDivider({
-  unlocked,
-  label,
-  progressLabel,
-}: {
-  unlocked: boolean;
-  label: string;
-  progressLabel: string;
-}) {
+function SectionDivider({ label, progressLabel }: { label: string; progressLabel: string }) {
   return (
     <div className="my-8 flex flex-col items-center gap-2">
-      <motion.div
-        animate={{ color: unlocked ? "var(--color-success)" : "var(--color-muted)" }}
-        className="flex items-center gap-2 text-xs font-medium"
-      >
+      <div className="flex items-center gap-2 text-xs font-medium text-success">
         <ChevronsDown size={16} />
-        {unlocked ? `${label} — unlocked` : `${label} — ${progressLabel}`}
-      </motion.div>
-      <div className={cn("h-px w-2/3 max-w-md", unlocked ? "bg-success/40" : "bg-border")} />
+        {label} — {progressLabel}
+      </div>
+      <div className="h-px w-2/3 max-w-md bg-success/40" />
     </div>
   );
 }
 
 export function SkillTreeCanvas() {
-  const { completedTopicIds, lastTopicId, advancedUnlocked, expertUnlocked, rings } = useProgress();
+  const { completedTopicIds, lastTopicId, rings } = useProgress();
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const dragState = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
@@ -181,7 +159,6 @@ export function SkillTreeCanvas() {
               <TopicNode
                 key={t.id}
                 topic={t}
-                locked={false}
                 done={completedTopicIds.includes(t.id)}
                 current={lastTopicId === t.id}
                 size="lg"
@@ -189,10 +166,9 @@ export function SkillTreeCanvas() {
             ))}
           </div>
 
-          <GateDivider
-            unlocked={advancedUnlocked}
+          <SectionDivider
             label="Advanced tier"
-            progressLabel={`${rings.mostAsked.done}/8 Most Asked completed`}
+            progressLabel={`${rings.mostAsked.done}/${rings.mostAsked.total} Most Asked completed`}
           />
 
           <div className="flex items-center gap-2 self-start text-sm font-semibold text-warning">
@@ -214,7 +190,6 @@ export function SkillTreeCanvas() {
                       <TopicNode
                         key={t.id}
                         topic={t}
-                        locked={!advancedUnlocked}
                         done={completedTopicIds.includes(t.id)}
                         current={lastTopicId === t.id}
                       />
@@ -224,10 +199,9 @@ export function SkillTreeCanvas() {
             ))}
           </div>
 
-          <GateDivider
-            unlocked={expertUnlocked}
+          <SectionDivider
             label="Expert tier"
-            progressLabel={`${rings.advanced.done}/20 Advanced completed`}
+            progressLabel={`${rings.advanced.done}/${rings.advanced.total} Advanced completed`}
           />
 
           <div className="flex items-center gap-2 self-start text-sm font-semibold text-indigo-300">
@@ -249,7 +223,6 @@ export function SkillTreeCanvas() {
                       <TopicNode
                         key={t.id}
                         topic={t}
-                        locked={!expertUnlocked}
                         done={completedTopicIds.includes(t.id)}
                         current={lastTopicId === t.id}
                       />

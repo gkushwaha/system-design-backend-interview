@@ -1,12 +1,5 @@
 import { useProgressStore } from "@/store/useProgressStore";
-import {
-  MOST_ASKED_COUNT,
-  ADVANCED_COUNT,
-  EXPERT_COUNT,
-  ADVANCED_UNLOCK_THRESHOLD,
-  EXPERT_UNLOCK_THRESHOLD,
-  topics,
-} from "@/data/topics";
+import { MOST_ASKED_COUNT, ADVANCED_COUNT, EXPERT_COUNT, topics } from "@/data/topics";
 
 export function useProgress() {
   const completedTopicIds = useProgressStore((s) => s.completedTopicIds);
@@ -26,9 +19,6 @@ export function useProgress() {
   const advancedDone = completedByTier("advanced");
   const expertDone = completedByTier("expert");
 
-  const advancedUnlocked = mostAskedDone >= ADVANCED_UNLOCK_THRESHOLD;
-  const expertUnlocked = advancedDone >= EXPERT_UNLOCK_THRESHOLD;
-
   return {
     completedTopicIds,
     recentTopicIds,
@@ -43,7 +33,5 @@ export function useProgress() {
       advanced: { done: advancedDone, total: ADVANCED_COUNT },
       expert: { done: expertDone, total: EXPERT_COUNT },
     },
-    advancedUnlocked,
-    expertUnlocked,
   };
 }

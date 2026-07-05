@@ -7,7 +7,6 @@ import {
   Swords,
   Clock,
   Flame,
-  Lock,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -51,7 +50,6 @@ function TopicRow({
   id,
   title,
   slug,
-  locked,
   done,
   prominent,
   to,
@@ -59,32 +57,24 @@ function TopicRow({
   id: number;
   title: string;
   slug: string;
-  locked: boolean;
   done: boolean;
   prominent?: boolean;
   to?: string;
 }) {
   return (
     <NavLink
-      to={locked ? "#" : (to ?? `/topics/${slug}`)}
-      onClick={(e) => locked && e.preventDefault()}
+      to={to ?? `/topics/${slug}`}
       className={({ isActive }) =>
         cn(
           "group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs transition-colors",
-          locked
-            ? "cursor-not-allowed text-muted/40"
-            : isActive
-              ? "bg-primary/15 text-indigo-300"
-              : "text-muted hover:bg-white/[0.04] hover:text-text",
+          isActive ? "bg-primary/15 text-indigo-300" : "text-muted hover:bg-white/[0.04] hover:text-text",
           prominent && "text-[13px] font-medium",
         )
       }
     >
       {/* no opacity dimming — it was pushing already-muted text below the 4.5:1 WCAG AA contrast floor */}
       <span className="w-4 shrink-0 text-center font-mono text-[10px]">{id}</span>
-      {locked ? (
-        <Lock size={12} className="shrink-0" />
-      ) : done ? (
+      {done ? (
         <CheckCircle2 size={12} className="shrink-0 text-success" />
       ) : (
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-40" />
@@ -97,12 +87,10 @@ function TopicRow({
 function CollapsibleGroup({
   label,
   defaultOpen = false,
-  locked = false,
   children,
 }: {
   label: string;
   defaultOpen?: boolean;
-  locked?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -113,7 +101,6 @@ function CollapsibleGroup({
         className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted hover:text-text"
       >
         {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        {locked && <Lock size={10} />}
         <span className="truncate">{label}</span>
       </button>
       {open && <div className="mt-0.5 space-y-0.5 pl-1">{children}</div>}
@@ -122,7 +109,7 @@ function CollapsibleGroup({
 }
 
 export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: () => void }) {
-  const { completedTopicIds, advancedUnlocked, expertUnlocked, rings } = useProgress();
+  const { completedTopicIds, rings } = useProgress();
   const [isBelowMd, setIsBelowMd] = useState(false);
 
   useEffect(() => {
@@ -192,7 +179,6 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
                 id={t.id}
                 title={t.title}
                 slug={t.slug}
-                locked={false}
                 done={completedTopicIds.includes(t.id)}
                 prominent
               />
@@ -209,7 +195,7 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
           </div>
           <div className="space-y-1">
             {advancedGroupNames.map((group) => (
-              <CollapsibleGroup key={group} label={group} locked={!advancedUnlocked}>
+              <CollapsibleGroup key={group} label={group}>
                 {topics
                   .filter((t) => t.tier === "advanced" && t.group === group)
                   .map((t) => (
@@ -218,7 +204,6 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
                       id={t.id}
                       title={t.title}
                       slug={t.slug}
-                      locked={!advancedUnlocked}
                       done={completedTopicIds.includes(t.id)}
                     />
                   ))}
@@ -236,7 +221,7 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
           </div>
           <div className="space-y-1">
             {expertGroupNames.map((group) => (
-              <CollapsibleGroup key={group} label={group} locked={!expertUnlocked}>
+              <CollapsibleGroup key={group} label={group}>
                 {topics
                   .filter((t) => t.tier === "expert" && t.group === group)
                   .map((t) => (
@@ -245,7 +230,6 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
                       id={t.id}
                       title={t.title}
                       slug={t.slug}
-                      locked={!expertUnlocked}
                       done={completedTopicIds.includes(t.id)}
                     />
                   ))}
@@ -261,17 +245,17 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
           <div className="space-y-1">
             <CollapsibleGroup label="🔥 Most Asked" defaultOpen>
               {mostAskedProblems.map((p) => (
-                <TopicRow key={p.id} id={p.order} title={p.title} slug={p.slug} to={`/problems/${p.slug}`} locked={false} done={false} />
+                <TopicRow key={p.id} id={p.order} title={p.title} slug={p.slug} to={`/problems/${p.slug}`} done={false} />
               ))}
             </CollapsibleGroup>
             <CollapsibleGroup label="Advanced">
               {advancedProblems.map((p) => (
-                <TopicRow key={p.id} id={p.order} title={p.title} slug={p.slug} to={`/problems/${p.slug}`} locked={false} done={false} />
+                <TopicRow key={p.id} id={p.order} title={p.title} slug={p.slug} to={`/problems/${p.slug}`} done={false} />
               ))}
             </CollapsibleGroup>
             <CollapsibleGroup label="Expert">
               {expertProblems.map((p) => (
-                <TopicRow key={p.id} id={p.order} title={p.title} slug={p.slug} to={`/problems/${p.slug}`} locked={false} done={false} />
+                <TopicRow key={p.id} id={p.order} title={p.title} slug={p.slug} to={`/problems/${p.slug}`} done={false} />
               ))}
             </CollapsibleGroup>
           </div>

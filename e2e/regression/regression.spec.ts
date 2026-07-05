@@ -108,3 +108,30 @@ test("REGRESSION BUG-007: navigating to a new topic resets scroll position inste
   await page.waitForTimeout(250);
   await expect.poll(() => page.evaluate(() => document.querySelector("main")?.scrollTop ?? -1)).toBe(0);
 });
+
+test("REGRESSION: no topic is ever locked — Advanced and Expert are immediately navigable with zero progress", async ({
+  page,
+}) => {
+  // Product decision: the app previously gated Advanced topics behind 8 completed
+  // Most Asked topics, and Expert behind 20 completed Advanced topics, showing a
+  // lock icon and blocking navigation. That gate was removed entirely — every
+  // topic must be reachable and clickable from a completely fresh profile.
+  await page.goto("#/map");
+  await expect(page.getByText("Every topic is open")).toBeVisible();
+
+  // SkillTreeCanvas renders every Advanced/Expert node as a plain, always-visible
+  // link directly in <main> (unlike the sidebar's collapsible groups, which sit
+  // off-canvas behind a hamburger on mobile) — a stable place to assert from on
+  // both the desktop and mobile projects.
+  const main = page.getByRole("main");
+  const advancedLink = main.getByRole("link", { name: /Raft/ }).first();
+  await expect(advancedLink).toBeVisible();
+  await advancedLink.click();
+  await expect(page).toHaveURL(/#\/topics\/raft-consensus/);
+
+  await page.goto("#/map");
+  const expertLink = main.getByRole("link", { name: /CRDT/ }).first();
+  await expect(expertLink).toBeVisible();
+  await expertLink.click();
+  await expect(page).toHaveURL(/#\/topics\/crdts/);
+});

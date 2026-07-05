@@ -8,35 +8,33 @@ export interface Topic {
   group: string;
   estimatedMinutes: number;
   example: string;
-  /** ids of topics that must be completed before this one unlocks (advanced/expert only) */
-  prerequisites: number[];
 }
 
 const MOST_ASKED_GROUP = "Most Asked";
 
 // ─────────────────────────────────────────────────────────────
-// MOST ASKED (1-15) — always unlocked
+// MOST ASKED (1-15)
 // ─────────────────────────────────────────────────────────────
 const mostAsked: Topic[] = [
-  { id: 1, slug: "horizontal-vs-vertical-scaling", title: "Horizontal vs vertical scaling", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 15, example: "How Instagram scaled from 1 server to 1 billion users", prerequisites: [] },
-  { id: 2, slug: "load-balancers", title: "Load balancers", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "AWS ALB routing to EC2 instances", prerequisites: [] },
-  { id: 3, slug: "sql-vs-nosql", title: "SQL vs NoSQL", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "SQL for banking, Cassandra for time series, Redis for sessions", prerequisites: [] },
-  { id: 4, slug: "caching-patterns", title: "Caching (cache-aside, write-through, write-back)", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Twitter caches timelines in Redis — 95% reads never touch DB", prerequisites: [] },
-  { id: 5, slug: "cap-theorem", title: "CAP theorem", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 15, example: "Cassandra (AP) vs HBase (CP) vs traditional SQL (CA)", prerequisites: [] },
-  { id: 6, slug: "database-indexing", title: "Database indexing", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "Finding user by email — 50ms full scan → 0.1ms with index", prerequisites: [] },
-  { id: 7, slug: "database-replication", title: "Database replication", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "MySQL primary/replica at Facebook scale", prerequisites: [] },
-  { id: 8, slug: "message-queues", title: "Message queues (Kafka / SQS / RabbitMQ)", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Uber trip events flowing through Kafka", prerequisites: [] },
-  { id: 9, slug: "rest-vs-grpc", title: "REST vs gRPC", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 15, example: "REST for public API, gRPC between internal microservices", prerequisites: [] },
-  { id: 10, slug: "rate-limiting", title: "Rate limiting", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "GitHub API 5000 req/hour, Stripe per-customer limits", prerequisites: [] },
-  { id: 11, slug: "cdn", title: "CDN", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 15, example: "Netflix serves 99% of traffic from CDN edge nodes", prerequisites: [] },
-  { id: 12, slug: "consistent-hashing", title: "Consistent hashing", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Memcached cluster, DynamoDB partitioning", prerequisites: [] },
-  { id: 13, slug: "database-sharding", title: "Database sharding", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Instagram shards by user_id hash", prerequisites: [] },
-  { id: 14, slug: "api-design", title: "API design (REST + pagination + idempotency)", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Stripe API — idempotency keys prevent double charges", prerequisites: [] },
-  { id: 15, slug: "circuit-breaker", title: "Circuit breaker pattern", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "Netflix pioneered the pattern with Hystrix; today's equivalent is resilience4j", prerequisites: [] },
+  { id: 1, slug: "horizontal-vs-vertical-scaling", title: "Horizontal vs vertical scaling", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 15, example: "How Instagram scaled from 1 server to 1 billion users" },
+  { id: 2, slug: "load-balancers", title: "Load balancers", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "AWS ALB routing to EC2 instances" },
+  { id: 3, slug: "sql-vs-nosql", title: "SQL vs NoSQL", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "SQL for banking, Cassandra for time series, Redis for sessions" },
+  { id: 4, slug: "caching-patterns", title: "Caching (cache-aside, write-through, write-back)", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Twitter caches timelines in Redis — 95% reads never touch DB" },
+  { id: 5, slug: "cap-theorem", title: "CAP theorem", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 15, example: "Cassandra (AP) vs HBase (CP) vs traditional SQL (CA)" },
+  { id: 6, slug: "database-indexing", title: "Database indexing", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "Finding user by email — 50ms full scan → 0.1ms with index" },
+  { id: 7, slug: "database-replication", title: "Database replication", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "MySQL primary/replica at Facebook scale" },
+  { id: 8, slug: "message-queues", title: "Message queues (Kafka / SQS / RabbitMQ)", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Uber trip events flowing through Kafka" },
+  { id: 9, slug: "rest-vs-grpc", title: "REST vs gRPC", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 15, example: "REST for public API, gRPC between internal microservices" },
+  { id: 10, slug: "rate-limiting", title: "Rate limiting", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "GitHub API 5000 req/hour, Stripe per-customer limits" },
+  { id: 11, slug: "cdn", title: "CDN", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 15, example: "Netflix serves 99% of traffic from CDN edge nodes" },
+  { id: 12, slug: "consistent-hashing", title: "Consistent hashing", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Memcached cluster, DynamoDB partitioning" },
+  { id: 13, slug: "database-sharding", title: "Database sharding", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Instagram shards by user_id hash" },
+  { id: 14, slug: "api-design", title: "API design (REST + pagination + idempotency)", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Stripe API — idempotency keys prevent double charges" },
+  { id: 15, slug: "circuit-breaker", title: "Circuit breaker pattern", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "Netflix pioneered the pattern with Hystrix; today's equivalent is resilience4j" },
 ];
 
 // ─────────────────────────────────────────────────────────────
-// ADVANCED (16-82) — unlock after completing 8 Most Asked
+// ADVANCED (16-82)
 // ─────────────────────────────────────────────────────────────
 type AdvancedSeed = [id: number, slug: string, title: string, example: string];
 
@@ -145,12 +143,11 @@ const advanced: Topic[] = advancedGroups.flatMap(([group, seeds]) =>
     group,
     estimatedMinutes: 14,
     example,
-    prerequisites: [],
   })),
 );
 
 // ─────────────────────────────────────────────────────────────
-// EXPERT (83-113) — unlock after completing 20 Advanced
+// EXPERT (83-113)
 // ─────────────────────────────────────────────────────────────
 type ExpertSeed = [id: number, slug: string, title: string, example: string];
 
@@ -209,7 +206,6 @@ const expert: Topic[] = expertGroups.flatMap(([group, seeds]) =>
     group,
     estimatedMinutes: 18,
     example,
-    prerequisites: [],
   })),
 );
 
@@ -221,9 +217,6 @@ export const topicBySlug = new Map(topics.map((t) => [t.slug, t]));
 export const MOST_ASKED_COUNT = mostAsked.length; // 15
 export const ADVANCED_COUNT = advanced.length; // 67
 export const EXPERT_COUNT = expert.length; // 31
-
-export const ADVANCED_UNLOCK_THRESHOLD = 8; // Most Asked topics required
-export const EXPERT_UNLOCK_THRESHOLD = 20; // Advanced topics required
 
 export const tierBadge: Record<Tier, string> = {
   "most-asked": "Most Asked",

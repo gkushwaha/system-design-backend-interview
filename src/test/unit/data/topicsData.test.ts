@@ -43,7 +43,7 @@ describe("topic list completeness", () => {
 });
 
 describe("topic data shape", () => {
-  it("every topic has id, slug, title, tier, group, estimatedMinutes, example, prerequisites", () => {
+  it("every topic has id, slug, title, tier, group, estimatedMinutes, example", () => {
     for (const t of topics) {
       expect(typeof t.id).toBe("number");
       expect(typeof t.slug).toBe("string");
@@ -55,22 +55,6 @@ describe("topic data shape", () => {
       expect(Number.isInteger(t.estimatedMinutes)).toBe(true);
       expect(t.estimatedMinutes).toBeGreaterThan(0);
       expect(typeof t.example).toBe("string");
-      expect(Array.isArray(t.prerequisites)).toBe(true);
-    }
-  });
-
-  it("Most Asked topics have empty prerequisites (tier-gated, not per-topic)", () => {
-    for (const t of topics.filter((t) => t.tier === "most-asked")) {
-      expect(t.prerequisites).toEqual([]);
-    }
-  });
-
-  it("all prerequisite ids (if any) reference existing topic ids", () => {
-    const validIds = new Set(topics.map((t) => t.id));
-    for (const t of topics) {
-      for (const prereq of t.prerequisites) {
-        expect(validIds.has(prereq)).toBe(true);
-      }
     }
   });
 });

@@ -6,7 +6,6 @@ import { TopicPage } from "@/pages/TopicPage";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useXPStore, levelForXP } from "@/store/useXPStore";
 import { useProgressStore } from "@/store/useProgressStore";
-import { topics, ADVANCED_UNLOCK_THRESHOLD } from "@/data/topics";
 
 function resetAll() {
   useXPStore.getState().reset();
@@ -41,28 +40,6 @@ describe("integration: new user completes their first topic end to end", () => {
     );
     await waitFor(() => expect(useProgressStore.getState().isTopicComplete(1)).toBe(true), { timeout: 2000 });
     expect(useXPStore.getState().xp).toBe(80);
-  });
-});
-
-describe("integration: Advanced unlocks after exactly 8 Most Asked topics", () => {
-  beforeEach(resetAll);
-
-  it("topic 16 (first Advanced) is locked before 8, unlocked at 8", () => {
-    const mostAskedIds = topics.filter((t) => t.tier === "most-asked").map((t) => t.id);
-    mostAskedIds.slice(0, 7).forEach((id) => useProgressStore.getState().completeTopic(id));
-
-    const advancedDone = topics.filter(
-      (t) => t.tier === "most-asked" && useProgressStore.getState().isTopicComplete(t.id),
-    ).length;
-    expect(advancedDone).toBe(7);
-    expect(advancedDone >= ADVANCED_UNLOCK_THRESHOLD).toBe(false);
-
-    useProgressStore.getState().completeTopic(mostAskedIds[7]);
-    const advancedDoneAfter = topics.filter(
-      (t) => t.tier === "most-asked" && useProgressStore.getState().isTopicComplete(t.id),
-    ).length;
-    expect(advancedDoneAfter).toBe(8);
-    expect(advancedDoneAfter >= ADVANCED_UNLOCK_THRESHOLD).toBe(true);
   });
 });
 

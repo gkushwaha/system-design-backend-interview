@@ -12,8 +12,7 @@ export function TopicMap() {
       <div>
         <h1 className="text-2xl font-semibold text-text">Skill Tree</h1>
         <p className="mt-1 text-sm text-muted">
-          Most Asked topics are always unlocked. Complete 8 to unlock Advanced, then 20 Advanced
-          topics to unlock Expert.
+          Every topic is open — jump to whatever you want to study, in any order.
         </p>
       </div>
 

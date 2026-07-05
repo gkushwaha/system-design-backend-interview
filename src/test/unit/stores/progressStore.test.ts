@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useProgressStore } from "@/store/useProgressStore";
-import { topics, ADVANCED_UNLOCK_THRESHOLD, EXPERT_UNLOCK_THRESHOLD } from "@/data/topics";
 
 function resetStore() {
   useProgressStore.getState().reset();
@@ -70,45 +69,6 @@ describe("visitTopic — recently visited", () => {
   it("records a lastVisitedAt timestamp for the topic", () => {
     useProgressStore.getState().visitTopic(1);
     expect(useProgressStore.getState().lastVisitedAt[1]).toBeTruthy();
-  });
-});
-
-describe("unlock logic (via data thresholds + completedTopicIds)", () => {
-  beforeEach(resetStore);
-
-  const mostAskedIds = topics.filter((t) => t.tier === "most-asked").map((t) => t.id);
-  const advancedIds = topics.filter((t) => t.tier === "advanced").map((t) => t.id);
-
-  function completedByTier(tier: "most-asked" | "advanced") {
-    const ids = useProgressStore.getState().completedTopicIds;
-    return topics.filter((t) => t.tier === tier && ids.includes(t.id)).length;
-  }
-
-  it("Advanced is locked when fewer than 8 Most Asked topics are complete", () => {
-    mostAskedIds.slice(0, 7).forEach((id) => useProgressStore.getState().completeTopic(id));
-    expect(completedByTier("most-asked")).toBe(7);
-    expect(completedByTier("most-asked") >= ADVANCED_UNLOCK_THRESHOLD).toBe(false);
-  });
-
-  it("Advanced unlocks at exactly 8 Most Asked complete (boundary)", () => {
-    mostAskedIds.slice(0, 8).forEach((id) => useProgressStore.getState().completeTopic(id));
-    expect(completedByTier("most-asked")).toBe(8);
-    expect(completedByTier("most-asked") >= ADVANCED_UNLOCK_THRESHOLD).toBe(true);
-  });
-
-  it("Advanced does NOT unlock at exactly 7 Most Asked complete (boundary)", () => {
-    mostAskedIds.slice(0, 7).forEach((id) => useProgressStore.getState().completeTopic(id));
-    expect(completedByTier("most-asked") >= ADVANCED_UNLOCK_THRESHOLD).toBe(false);
-  });
-
-  it("Expert unlocks at exactly 20 Advanced complete (boundary)", () => {
-    advancedIds.slice(0, 20).forEach((id) => useProgressStore.getState().completeTopic(id));
-    expect(completedByTier("advanced") >= EXPERT_UNLOCK_THRESHOLD).toBe(true);
-  });
-
-  it("Expert does NOT unlock at exactly 19 Advanced complete (boundary)", () => {
-    advancedIds.slice(0, 19).forEach((id) => useProgressStore.getState().completeTopic(id));
-    expect(completedByTier("advanced") >= EXPERT_UNLOCK_THRESHOLD).toBe(false);
   });
 });
 

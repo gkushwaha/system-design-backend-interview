@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useProgressStore } from "@/store/useProgressStore";
@@ -47,39 +46,27 @@ describe("Sidebar — default (collapsed) state", () => {
   });
 });
 
-describe("Sidebar — expanding a locked group", () => {
+describe("Sidebar — Advanced/Expert topics are always navigable, nothing is locked", () => {
   beforeEach(() => useProgressStore.getState().reset());
 
-  it("expanding an Advanced group reveals its topics as locked and clicking does not navigate away", async () => {
-    const user = userEvent.setup();
-    renderSidebar(["/some-current-page"]);
-    const firstAdvancedTopic = topics.find((t) => t.tier === "advanced")!;
-    const groupToggle = screen.getByText(firstAdvancedTopic.group);
-    await user.click(groupToggle);
-    const link = screen.getByText(firstAdvancedTopic.title).closest("a")!;
-    // Locked rows resolve to the current path (react-router's `to="#"` behavior), but
-    // the onClick handler calls preventDefault, so clicking must not navigate away.
-    await user.click(link);
-    expect(window.location.href).not.toContain("/topics/");
-  });
-});
-
-describe("Sidebar — unlocked state after completing 8 Most Asked", () => {
-  beforeEach(() => useProgressStore.getState().reset());
-
-  it("Advanced topics become navigable once 8 Most Asked topics are complete", async () => {
-    const mostAskedIds = topics.filter((t) => t.tier === "most-asked").map((t) => t.id).slice(0, 8);
-    mostAskedIds.forEach((id) => useProgressStore.getState().completeTopic(id));
-
-    const user = userEvent.setup();
+  it("expanding an Advanced group reveals its topics as normal, immediately clickable links even with zero progress", () => {
     renderSidebar();
     const firstAdvancedTopic = topics.find((t) => t.tier === "advanced")!;
     const groupToggle = screen.getByText(firstAdvancedTopic.group);
-    await user.click(groupToggle);
+    fireEvent.click(groupToggle);
     const link = screen.getByText(firstAdvancedTopic.title).closest("a");
     // MemoryRouter renders plain paths (no "#" prefix); the real app uses HashRouter,
     // whose "#" prefixing is verified separately in the Playwright e2e suite.
     expect(link).toHaveAttribute("href", `/topics/${firstAdvancedTopic.slug}`);
+  });
+
+  it("an Expert topic is also immediately navigable with zero progress", () => {
+    renderSidebar();
+    const firstExpertTopic = topics.find((t) => t.tier === "expert")!;
+    const groupToggle = screen.getByText(firstExpertTopic.group);
+    fireEvent.click(groupToggle);
+    const link = screen.getByText(firstExpertTopic.title).closest("a");
+    expect(link).toHaveAttribute("href", `/topics/${firstExpertTopic.slug}`);
   });
 });
 
