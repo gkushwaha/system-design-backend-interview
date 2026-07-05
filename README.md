@@ -22,9 +22,18 @@ and how to use it, not a dashboard.
 
 ## Getting started
 
+Requires Node 18+.
+
 ```bash
+git clone https://github.com/gkushwaha/system-design-backend-interview.git
+cd system-design-backend-interview
 npm install
-npm run dev       # start the dev server
+npm run dev       # start the dev server at http://localhost:5173
+```
+
+Other useful commands:
+
+```bash
 npm run build     # type-check + production build to dist/
 npm run preview   # preview the production build locally
 ```
@@ -97,8 +106,8 @@ that's been found and fixed, so none of them can silently reappear.
 - **Route-level code splitting**: every page except `Home` is `React.lazy`-loaded in `main.tsx`.
 - **Progress/XP persistence**: `useProgressStore` and `useXPStore` persist to `localStorage` via Zustand's
   `persist` middleware — no backend.
-- **Skill tree unlock logic**: Advanced unlocks after 8 Most Asked topics are completed; Expert unlocks after
-  20 Advanced topics. See `useProgress.ts` and `ADVANCED_UNLOCK_THRESHOLD` / `EXPERT_UNLOCK_THRESHOLD` in `data/topics.ts`.
+- **No topic is ever locked** — every Most Asked, Advanced, and Expert topic is navigable from a
+  completely fresh profile, in any order.
 - **Interview Simulation's "replay" mode** reuses the same `SolutionBuilder` component from the System Design
   problem pages to show the model answer walkthrough.
 - **First-paint animation is skipped explicitly** (`App.tsx`'s `PageTransition`): relying on
