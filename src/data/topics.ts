@@ -30,7 +30,7 @@ const mostAsked: Topic[] = [
   { id: 12, slug: "consistent-hashing", title: "Consistent hashing", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Memcached cluster, DynamoDB partitioning" },
   { id: 13, slug: "database-sharding", title: "Database sharding", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Instagram shards by user_id hash" },
   { id: 14, slug: "api-design", title: "API design (REST + pagination + idempotency)", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "Stripe API — idempotency keys prevent double charges" },
-  { id: 15, slug: "circuit-breaker", title: "Circuit breaker pattern", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 18, example: "Netflix pioneered the pattern with Hystrix; today's equivalent is resilience4j" },
+  { id: 15, slug: "jwt-oauth2", title: "JWT and OAuth2 — full animated token flow", tier: "most-asked", group: MOST_ASKED_GROUP, estimatedMinutes: 20, example: "\"Sign in with Google\" OAuth2 flow" },
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ const advancedGroups: [string, AdvancedSeed[]][] = [
     [55, "graphql-n-plus-one", "GraphQL — queries, mutations, N+1 problem, DataLoader", "GitHub's public GraphQL API"],
     [56, "websockets-vs-sse-vs-polling", "WebSockets vs SSE vs Long Polling vs Webhooks", "Slack real-time messaging vs Stripe webhooks"],
     [57, "http1-vs-http2-vs-http3", "HTTP/1.1 vs HTTP/2 vs HTTP/3 — head-of-line blocking, QUIC", "Google's adoption of QUIC/HTTP3 for Search"],
-    [58, "jwt-oauth2", "JWT and OAuth2 — full animated token flow", "\"Sign in with Google\" OAuth2 flow"],
+    [58, "circuit-breaker", "Circuit breaker pattern", "Netflix pioneered the pattern with Hystrix; today's equivalent is resilience4j"],
     [59, "api-versioning", "API versioning strategies", "Stripe's dated API version headers"],
     [60, "webhooks-design", "Webhooks design and delivery guarantees", "Stripe webhook retries with exponential backoff"],
   ]],

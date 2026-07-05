@@ -86,7 +86,7 @@ describe("topic order", () => {
     expect(topics.find((t) => t.id === 2)?.title).toMatch(/Load balancers/i);
   });
 
-  it("topic 15 is Circuit breaker pattern", () => {
-    expect(topics.find((t) => t.id === 15)?.title).toMatch(/Circuit breaker/i);
+  it("topic 15 is JWT and OAuth2", () => {
+    expect(topics.find((t) => t.id === 15)?.title).toMatch(/JWT and OAuth2/i);
   });
 });
