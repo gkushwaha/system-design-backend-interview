@@ -1,16 +1,24 @@
 # System Design & Backend Interview Prep
 
-An interactive, gamified learning tool for backend system design interviews — Duolingo-style skill tree, animated interactive diagrams instead of static slides, a capacity calculator, and a timed whiteboard interview simulation.
+🌐 **Live:** https://gkushwaha.github.io/system-design-backend-interview/
+
+A free, self-contained curriculum for backend system design interviews — a Duolingo-style skill
+tree, animated interactive diagrams instead of static slides, a capacity calculator, and a timed
+whiteboard interview simulation. XP/streak/level gamification tracks your progress in the
+background (sidebar + navbar), but the Home page itself is a plain orientation page: what this is
+and how to use it, not a dashboard.
 
 ## Tech stack
 
 - React 19 + Vite 8, TypeScript (strict mode)
 - Tailwind CSS v4
-- Framer Motion — all animations
+- Framer Motion — all animations (respects `prefers-reduced-motion` via `MotionConfig`)
 - Recharts — data visualizations (lazy-loaded, code-split from the main bundle)
 - Zustand — XP and progress state, persisted to `localStorage`
 - React Router v7 (`HashRouter`, so it works on GitHub Pages with no server config)
 - Lucide React — icons
+- Vitest + React Testing Library — unit/integration tests
+- Playwright + axe-core — end-to-end and accessibility tests
 
 ## Getting started
 
@@ -44,6 +52,12 @@ src/
                             company note), also lazily loaded per slug
   store/                   Zustand stores: useXPStore (XP/level), useProgressStore (completion, streak, history)
   hooks/                   useXP, useProgress, useStreak — thin wrappers around the stores plus derived data
+  test/
+    unit/                  Vitest unit tests: stores, data integrity, content accuracy, components
+    integration/           Multi-component user-journey tests
+e2e/                       Playwright end-to-end tests (critical paths, responsive, accessibility,
+                            dark mode, persistence, error handling)
+  regression/               One test per fixed bug, named `REGRESSION BUG-XXX: <description>`
 ```
 
 ## Content coverage
@@ -59,6 +73,22 @@ use a functional placeholder (real-world example + all tabs + mark-complete) unt
 | Expert topics | 6 (one flagship per group) | 31 |
 | Problems | 13 (7 Most Asked + 6 flagship) | 30 |
 
+## Testing
+
+```bash
+npm test               # Vitest in watch mode
+npm run test:run       # Vitest, single run
+npm run test:coverage  # Vitest with a coverage report
+npm run test:e2e       # Playwright, headless (desktop Chrome + a Pixel 5 mobile-emulated project)
+npm run test:e2e:ui    # Playwright's interactive UI mode
+npm run test:all       # coverage run + full E2E suite
+```
+
+Accessibility is checked automatically: `e2e/accessibility.spec.ts` runs an `axe-core` scan against
+every major route and asserts zero critical/serious violations, plus a keyboard-navigation and an
+icon-button-labeling check. `e2e/regression/regression.spec.ts` holds one permanent test per bug
+that's been found and fixed, so none of them can silently reappear.
+
 ## Key architectural notes
 
 - **Lazy loading**: `topicContent/index.ts` and `problemContent/index.ts` export a map of slug → dynamic
@@ -71,6 +101,13 @@ use a functional placeholder (real-world example + all tabs + mark-complete) unt
   20 Advanced topics. See `useProgress.ts` and `ADVANCED_UNLOCK_THRESHOLD` / `EXPERT_UNLOCK_THRESHOLD` in `data/topics.ts`.
 - **Interview Simulation's "replay" mode** reuses the same `SolutionBuilder` component from the System Design
   problem pages to show the model answer walkthrough.
+- **First-paint animation is skipped explicitly** (`App.tsx`'s `PageTransition`): relying on
+  `AnimatePresence`'s `initial={false}` alone raced the lazy-loaded route chunk and could leave content
+  stuck at partial opacity on a real network. A module-level flag detects the true first render and
+  renders it with no animation wrapper at all — only in-app route changes get the crossfade.
+- **Scroll position resets on route change**: `<main>` never unmounts between in-app navigations, so its
+  `scrollTop` was carrying over from whatever page you navigated away from. `App.tsx` resets it to 0 via
+  a shared ref whenever the route changes.
 
 ## Deployment
 
