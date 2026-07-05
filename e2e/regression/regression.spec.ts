@@ -79,3 +79,32 @@ test("REGRESSION BUG-006: the very first route render is never stuck at partial/
     expect(opacity).toBe("1");
   }
 });
+
+test("REGRESSION BUG-007: navigating to a new topic resets scroll position instead of carrying over the old page's scrollTop", async ({
+  page,
+}) => {
+  // <main> never unmounts between in-app route changes, so its scrollTop was
+  // carrying over from whatever page you navigated away from — scrolling deep
+  // into one topic, then clicking a different (shorter) topic in the sidebar,
+  // landed on the new page already scrolled down, looking like a big blank gap
+  // above the content (reported by a user against the deployed site).
+  await page.setViewportSize({ width: 1280, height: 400 }); // force overflow reliably
+  await page.goto("#/topics/database-sharding");
+  await expect(page.getByRole("heading", { name: "Database sharding" })).toBeVisible();
+  await page.evaluate(() => document.querySelector("main")?.scrollTo(0, 800));
+  await expect
+    .poll(() => page.evaluate(() => document.querySelector("main")?.scrollTop ?? 0))
+    .toBeGreaterThan(0);
+
+  // Not `exact: true` — the link's accessible name also includes its sidebar
+  // order number ("2 Load balancers"), not just the title text.
+  await page.getByRole("link", { name: "Load balancers" }).click();
+  // Wait for the new route's own content to mount (not just the URL to change)
+  // before checking scrollTop — the scroll-reset effect runs on that commit.
+  // AnimatePresence's crossfade briefly keeps the outgoing and incoming pages
+  // both mounted, which can transiently duplicate this heading — .first() plus
+  // a brief settle avoids catching that mid-transition moment.
+  await expect(page.getByRole("heading", { name: "Load balancers" }).first()).toBeVisible();
+  await page.waitForTimeout(250);
+  await expect.poll(() => page.evaluate(() => document.querySelector("main")?.scrollTop ?? -1)).toBe(0);
+});
