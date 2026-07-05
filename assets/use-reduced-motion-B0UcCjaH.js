@@ -1,1 +1,0 @@
-import{c as e,r as t}from"./cn--uKEoY85.js";import{C as n,S as r,x as i}from"./index-CCRajdmP.js";var a=e(t(),1);function o(){!r.current&&i();let[e]=(0,a.useState)(n.current);return e}export{o as t};
